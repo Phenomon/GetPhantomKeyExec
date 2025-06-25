@@ -46,24 +46,18 @@ function saveKeyData(obj) {
     localStorage.setItem('phantom_generated_key_v4', JSON.stringify(obj));
 }
 
-function showKeyAndExpiry(key, expiresUnix) {
+function showKey(key) {
     document.getElementById('key-display').textContent = key;
-    updateExpiresIn(expiresUnix);
 }
 
-function updateExpiresIn(expiresUnix) {
-    const now = Math.floor(Date.now() / 1000);
-    let secondsLeft = expiresUnix - now;
-    const expiresDiv = document.getElementById('expires-in');
-    if (secondsLeft <= 0) {
-        expiresDiv.textContent = "Key expired. Refreshing…";
-        setTimeout(() => location.reload(), 1000);
-        return;
-    }
-    let min = Math.floor(secondsLeft / 60);
-    let sec = secondsLeft % 60;
-    expiresDiv.textContent = `Expires in: ${min}:${sec.toString().padStart(2, '0')}`;
-    setTimeout(() => updateExpiresIn(expiresUnix), 1000);
+function handleExpiration(expiresUnix) {
+    const interval = setInterval(() => {
+        const now = Math.floor(Date.now() / 1000);
+        if (now >= expiresUnix) {
+            clearInterval(interval);
+            location.reload();
+        }
+    }, 1000);
 }
 
 window.onload = function() {
@@ -81,7 +75,8 @@ window.onload = function() {
         keyData.expires === expireAt &&
         typeof keyData.key === "string"
     ) {
-        showKeyAndExpiry(keyData.key, expireAt);
+        showKey(keyData.key);
+        handleExpiration(expireAt);
     } else {
         // Generate a new random key for this cycle and user
         const key = generateRandomKey(20);
@@ -91,6 +86,7 @@ window.onload = function() {
             cycleStart: cycleStart,
             expires: expireAt
         });
-        showKeyAndExpiry(key, expireAt);
+        showKey(key);
+        handleExpiration(expireAt);
     }
 };
