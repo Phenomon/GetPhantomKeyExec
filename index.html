@@ -4,16 +4,42 @@
     <meta charset="UTF-8">
     <title>Phantom Key Generator</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 40px; background: #f5f5f5; }
-        .container { max-width: 400px; margin: auto; background: #fff; padding: 24px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);}
-        h2 { text-align: center; }
-        #key-display { font-size: 1.25em; letter-spacing: 0.12em; margin: 18px 0; word-break: break-all; text-align: center;}
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 40px; 
+            background: #000; 
+            color: #fff;
+        }
+        .container { 
+            max-width: 400px; 
+            margin: auto; 
+            background: #000; 
+            padding: 24px; 
+            border-radius: 10px; 
+            box-shadow: 0 2px 8px rgba(255,255,255,0.08);
+        }
+        h2 { text-align: center; color: #fff; }
+        #key-display { 
+            font-size: 1.25em; 
+            letter-spacing: 0.12em; 
+            margin: 18px 0; 
+            word-break: break-all; 
+            text-align: center;
+            color: #fff;
+        }
+        #saved-message {
+            text-align: center;
+            color: #0f0;
+            font-size: 0.95em;
+            margin-top: 12px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Phantom Key Generator</h2>
         <div id="key-display">Generating key...</div>
+        <div id="saved-message"></div>
     </div>
     <script src="generate-key.js"></script>
 </body>
