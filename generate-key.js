@@ -1,7 +1,6 @@
 // Set key expiration time limit (in seconds)
 const KEY_EXPIRE_SECONDS = 60 * 5; // 5 minutes, change as needed
 
-// Generate a "user fingerprint" for uniqueness (browser+platform+random seed)
 function getUserFingerprint() {
     let fp = [
         navigator.userAgent,
@@ -30,30 +29,28 @@ function hashString(str) {
     return Math.abs(hash).toString(36);
 }
 
-function generateKey(userId) {
+function generateKey(userId, cycleStart) {
     const length = 20;
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let key = '';
-    // Mix userId hash into key generation for user-uniqueness
-    let seed = hashString(userId + Date.now() + Math.random());
+    // Mix userId hash and cycle start into key generation for user-uniqueness and time-boundedness
+    let seed = hashString(userId + "|" + cycleStart);
     for (let i = 0; i < length; i++) {
         // Use char codes from the seed as a pseudo-randomizer
-        let charIdx = (seed.charCodeAt(i % seed.length) + Math.floor(Math.random() * chars.length)) % chars.length;
+        let charIdx = (seed.charCodeAt(i % seed.length) + i) % chars.length;
         key += chars.charAt(charIdx);
     }
     return key;
 }
 
-function saveKeyForUser(userId, key, expiryUnix) {
-    localStorage.setItem('phantom_generated_key', JSON.stringify({
-        userId: userId,
-        key: key,
-        expires: expiryUnix
-    }));
+function getCurrentCycleStart() {
+    // Returns the Unix timestamp (in seconds) of the start of the current key cycle
+    const now = Math.floor(Date.now() / 1000);
+    return now - (now % KEY_EXPIRE_SECONDS);
 }
 
-function getKeyForUser(userId) {
-    const data = localStorage.getItem('phantom_generated_key');
+function getKeyData(userId) {
+    const data = localStorage.getItem('phantom_generated_key_v2');
     if (!data) return null;
     try {
         const parsed = JSON.parse(data);
@@ -66,6 +63,15 @@ function getKeyForUser(userId) {
     }
 }
 
+function saveKeyData(userId, key, cycleStart, expireAt) {
+    localStorage.setItem('phantom_generated_key_v2', JSON.stringify({
+        userId: userId,
+        key: key,
+        cycleStart: cycleStart,
+        expires: expireAt
+    }));
+}
+
 function showKeyAndExpiry(key, expiresUnix) {
     document.getElementById('key-display').textContent = key;
     updateExpiresIn(expiresUnix);
@@ -76,8 +82,8 @@ function updateExpiresIn(expiresUnix) {
     let secondsLeft = expiresUnix - now;
     const expiresDiv = document.getElementById('expires-in');
     if (secondsLeft <= 0) {
-        expiresDiv.textContent = "Key expired. Refresh to generate a new key.";
-        document.getElementById('key-display').textContent = "Key expired.";
+        expiresDiv.textContent = "Key expired. Refreshing…";
+        setTimeout(() => location.reload(), 1000);
         return;
     }
     let min = Math.floor(secondsLeft / 60);
@@ -88,14 +94,17 @@ function updateExpiresIn(expiresUnix) {
 
 window.onload = function() {
     const userId = getUserFingerprint();
-    let keyData = getKeyForUser(userId);
-    const now = Math.floor(Date.now() / 1000);
-    if (keyData && keyData.expires > now) {
-        showKeyAndExpiry(keyData.key, keyData.expires);
+    const cycleStart = getCurrentCycleStart();
+    const expireAt = cycleStart + KEY_EXPIRE_SECONDS;
+
+    let keyData = getKeyData(userId);
+
+    // If no key stored, or it's for a different cycle, generate a new one for this cycle
+    if (!keyData || keyData.cycleStart !== cycleStart) {
+        const key = generateKey(userId, cycleStart);
+        saveKeyData(userId, key, cycleStart, expireAt);
+        showKeyAndExpiry(key, expireAt);
     } else {
-        const key = generateKey(userId);
-        const expires = now + KEY_EXPIRE_SECONDS;
-        saveKeyForUser(userId, key, expires);
-        showKeyAndExpiry(key, expires);
+        showKeyAndExpiry(keyData.key, keyData.expires);
     }
 };
