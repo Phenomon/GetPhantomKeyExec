@@ -18,23 +18,11 @@ function getUserFingerprint() {
     return fp;
 }
 
-function hashString(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) - hash) + str.charCodeAt(i);
-        hash |= 0;
-    }
-    return Math.abs(hash).toString(36);
-}
-
-function generateKey(userId, cycleStart) {
-    const length = 20;
+function generateRandomKey(length = 20) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let key = '';
-    let seed = hashString(userId + "|" + cycleStart);
     for (let i = 0; i < length; i++) {
-        let charIdx = (seed.charCodeAt(i % seed.length) + i) % chars.length;
-        key += chars.charAt(charIdx);
+        key += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return key;
 }
@@ -45,7 +33,7 @@ function getCurrentCycleStart() {
 }
 
 function getKeyData() {
-    const data = localStorage.getItem('phantom_generated_key_v3');
+    const data = localStorage.getItem('phantom_generated_key_v4');
     if (!data) return null;
     try {
         return JSON.parse(data);
@@ -55,7 +43,7 @@ function getKeyData() {
 }
 
 function saveKeyData(obj) {
-    localStorage.setItem('phantom_generated_key_v3', JSON.stringify(obj));
+    localStorage.setItem('phantom_generated_key_v4', JSON.stringify(obj));
 }
 
 function showKeyAndExpiry(key, expiresUnix) {
@@ -85,7 +73,7 @@ window.onload = function() {
 
     let keyData = getKeyData();
 
-    // Check if stored key is valid for this user and this cycle
+    // If stored key is valid for this user and cycle, use it
     if (
         keyData &&
         keyData.userId === userId &&
@@ -95,7 +83,8 @@ window.onload = function() {
     ) {
         showKeyAndExpiry(keyData.key, expireAt);
     } else {
-        const key = generateKey(userId, cycleStart);
+        // Generate a new random key for this cycle and user
+        const key = generateRandomKey(20);
         saveKeyData({
             userId: userId,
             key: key,
