@@ -5,8 +5,24 @@ function generateKey() {
     for (let i = 0; i < length; i++) {
         key += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    document.getElementById('key-display').textContent = key;
+    return key;
 }
 
-// Generate the key as soon as the page loads
-window.onload = generateKey;
+function saveKey(key) {
+    try {
+        localStorage.setItem('phantom_generated_key', key);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+window.onload = function() {
+    let key = generateKey();
+    document.getElementById('key-display').textContent = key;
+    if (saveKey(key)) {
+        document.getElementById('saved-message').textContent = "Key saved locally!";
+    } else {
+        document.getElementById('saved-message').textContent = "Failed to save key.";
+    }
+};
