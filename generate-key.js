@@ -1,5 +1,5 @@
 // Set key expiration time limit (in seconds)
-const KEY_EXPIRE_SECONDS = 60 * 5; // 5 minutes, change as needed
+const KEY_EXPIRE_SECONDS = 60 * 36000; // 5 minutes, change as needed
 
 function getUserFingerprint() {
     let fp = [
